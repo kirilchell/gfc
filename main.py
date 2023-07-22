@@ -215,65 +215,64 @@ def detect_encoding(file_path, num_bytes=10000):
     result = chardet.detect(rawdata)
     return result['encoding']
 
-
-
-# Эти параметры нужно задать в начале кода или взять из окружения
 BUCKET_NAME = 'csv-chunk'
 PROJECT_ID = 'inner-nuance-389811'
 TOPIC_ID = 'topic-downl-importsheet'
 
 def upload_file_to_gcs(file_path, destination_blob_name):
-    """Uploads a file to the bucket."""
-    bucket = storage.Client().bucket(BUCKET_NAME)
-    blob = bucket.blob(destination_blob_name)
+    try:
+        """Uploads a file to the bucket."""
+        bucket = storage.Client().bucket(BUCKET_NAME)
+        blob = bucket.blob(destination_blob_name)
 
-    blob.upload_from_filename(file_path)
+        blob.upload_from_filename(file_path)
 
-    print(
-        "File {} uploaded to {}.".format(
-            file_path, destination_blob_name
-        )
-    )
-
+        print("File {} uploaded to {}.".format(file_path, destination_blob_name))
+    except Exception as e:
+        logging.error(f"Error occurred while uploading to GCS: {e}")
+        
 def publish_messages_to_pubsub(file_path, service_account, table_id):
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
+    try:
+        publisher = pubsub_v1.PublisherClient()
+        topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
-    message = f"{file_path},{service_account},{table_id}"
-    future = publisher.publish(topic_path, message.encode("utf-8"))
-    print(future.result())
+        message = f"{file_path},{service_account},{table_id}"
+        future = publisher.publish(topic_path, message.encode("utf-8"))
+        print(future.result())
+    except Exception as e:
+        logging.error(f"Error occurred while publishing to Pub/Sub: {e}")
 
 def upload_files(local_file_path, chunksize, file_objects, service_drive, credentials_list): 
-    try: 
-        logging.info("Unzipping file...") 
-        os.system('gunzip -c ' + local_file_path + ' > ' + local_file_path[:-3]) 
-        logging.info("File unzipped.") 
+    try:
+        logging.info("Unzipping file...")
+        os.system('gunzip -c ' + local_file_path + ' > ' + local_file_path[:-3])
+        logging.info("File unzipped.")
 
         csv_file = local_file_path[:-3]
 
-        logging.info("Reading and processing CSV file...") 
-        encoding = detect_encoding(csv_file) 
-        logging.info(f"Detected encoding: {encoding}")  # вывод кодировки в логи 
+        logging.info("Reading and processing CSV file...")
+        encoding = detect_encoding(csv_file)
+        logging.info(f"Detected encoding: {encoding}")
 
-        # Используем itertools.cycle для циклического перебора учетных данных
         credentials_cycle = itertools.cycle(credentials_list)
 
         for chunk_id, chunk in enumerate(pd.read_csv(csv_file, encoding=encoding, sep=';', chunksize=chunksize, dtype=str)): 
-            logging.info(f'Processing chunk number: {chunk_id}') 
-          
-            chunk_file_path = f"{csv_file}_chunk_{chunk_id}.csv"
-            chunk.to_csv(chunk_file_path, index=False)
-            
-            destination_blob_name = f"data/{chunk_file_path.split('/')[-1]}"
-            upload_file_to_gcs(chunk_file_path, destination_blob_name)
-            
-            spreadsheet = process_last_modified_file(file_objects, service_drive)
-            # Используем next(credentials_cycle) для получения следующего набора учетных данных
-            credentials = next(credentials_cycle)
-            service_account = credentials["client_email"]
+            try:
+                logging.info(f'Processing chunk number: {chunk_id}')
 
-            publish_messages_to_pubsub(destination_blob_name, service_account, spreadsheet)
+                chunk_file_path = f"{csv_file}_chunk_{chunk_id}.csv"
+                chunk.to_csv(chunk_file_path, index=False)
 
+                destination_blob_name = f"data/{chunk_file_path.split('/')[-1]}"
+                upload_file_to_gcs(chunk_file_path, destination_blob_name)
+
+                spreadsheet = process_last_modified_file(file_objects, service_drive)
+                credentials = next(credentials_cycle)
+                service_account = credentials["client_email"]
+
+                publish_messages_to_pubsub(destination_blob_name, service_account, spreadsheet)
+            except Exception as e:
+                logging.error(f"Error occurred while processing chunk {chunk_id}: {e}")
     finally: 
         logging.info("Done processing and uploading files.")
 
