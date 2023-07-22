@@ -19,6 +19,9 @@ from googleapiclient.errors import HttpError
 import gc as garbage_collector
 import chardet
 import itertools
+from google.cloud import storage
+from google.cloud import pubsub_v1
+
 
 num_files = 12
 # Set up logging
@@ -211,8 +214,8 @@ def detect_encoding(file_path, num_bytes=10000):
         rawdata = f.read(num_bytes)
     result = chardet.detect(rawdata)
     return result['encoding']
-from google.cloud import storage
-from google.cloud import pubsub_v1
+
+
 
 # Эти параметры нужно задать в начале кода или взять из окружения
 BUCKET_NAME = 'csv-chunk'
