@@ -268,9 +268,9 @@ def upload_files(local_file_path, chunksize, file_objects, service_drive, creden
 
                 spreadsheet = process_last_modified_file(file_objects, service_drive)
                 credentials = next(credentials_cycle)
-                service_account = credentials["client_email"]
+                
 
-                publish_messages_to_pubsub(destination_blob_name, service_account, spreadsheet)
+                publish_messages_to_pubsub(destination_blob_name, credentials, spreadsheet)
             except Exception as e:
                 logging.error(f"Error occurred while processing chunk {chunk_id}: {e}")
     finally: 
