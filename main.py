@@ -118,7 +118,7 @@ def download_file(session, url, local_filename):
 
 def create_and_move_files(filename, credentials, parent_folder_id, num_files):
     try:
-        gc = gspread.authorize(credentials)
+        gc = gspread.authorize(credentials[1])
         print("Authorized successfully.")
     except Exception as e:
         print("Error authorizing: ", e)
