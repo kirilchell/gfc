@@ -150,7 +150,7 @@ def create_and_move_files(filename, credentials, parent_folder_id, num_files):
 
     # Перемещение файлов в требуемую папку
     try:
-        service_drive = build('drive', 'v3', credentials=credentials)
+        service_drive = build('drive', 'v3', credentials=credentials[1])
         print("Drive service built successfully.")
     except Exception as e:
         print("Error building drive service: ", e)
