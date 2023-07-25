@@ -237,6 +237,7 @@ def publish_messages_to_pubsub(file_path, service_account, table_id):
         topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
         message = f"{file_path},{service_account},{table_id}"
+        print(message)
         future = publisher.publish(topic_path, message.encode("utf-8"))
         print(future.result())
     except Exception as e:
