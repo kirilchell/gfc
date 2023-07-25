@@ -217,7 +217,7 @@ def detect_encoding(file_path, num_bytes=10000):
 
 BUCKET_NAME = 'csv-chunk'
 PROJECT_ID = 'inner-nuance-389811'
-TOPIC_ID = 'topic-downl-importsheet'
+TOPIC_ID = 'start-import'
 
 def upload_file_to_gcs(file_path, destination_blob_name):
     try:
