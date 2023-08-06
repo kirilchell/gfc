@@ -268,10 +268,11 @@ def upload_files(local_file_path, chunksize, file_objects, service_drive, creden
                 upload_file_to_gcs(chunk_file_path, destination_blob_name)
 
                 spreadsheet = process_last_modified_file(file_objects, service_drive)
+                spreadsheet_id = spreadsheet.id
                 key_filename, credentials = next(credentials_cycle)
                 
 
-                publish_messages_to_pubsub(destination_blob_name, key_filename, spreadsheet)
+                publish_messages_to_pubsub(destination_blob_name, key_filename, spreadsheet_id)
             except Exception as e:
                 logging.error(f"Error occurred while processing chunk {chunk_id}: {e}")
     finally: 
